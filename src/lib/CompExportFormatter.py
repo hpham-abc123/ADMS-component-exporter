@@ -13,6 +13,7 @@
 # 16/06/2022 - Hung Pham - Fixed up PFL export to generate definition for RT only
 #                          Added definition to vector attribute
 # 06/09/2022 - Hung Pham - change to json format to properly output attributes
+# 24/02/2024 - Hung Pham - Added get_footer to IExporter and PflExporter
 from PoaPfl import PoaPfl
 import copy
 import datetime
@@ -45,6 +46,9 @@ class IExporter(object):
 
     def get_result(self):
         return self._result
+    
+    def get_footer(self):
+        return ''
 
 
 # ---------------------------------------------------------------------------
@@ -201,7 +205,11 @@ class PflExporter(IExporter):
     # --------------------------------------------------------------------------
     def get_result(self):
         """ Return output export result in a string format """
-        return self._result + self._attr_def + self._pfl.eof()
+        return self._result + self._attr_def
+    
+    # --------------------------------------------------------------------------
+    def get_footer(self):
+        return self._pfl.eof()
 
 # ---------------------------------------------------------------------------
 class JSONExporter(IExporter):

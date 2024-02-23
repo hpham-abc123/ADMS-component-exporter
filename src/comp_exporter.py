@@ -1,15 +1,17 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # ----------------------------------------------------------------------------
+# Created By  : Hung Pham
 # Created Date: 29/05/2022
-# version ='1.0'
+# version ='0.3'
 # My weekend's work, to skill up my python skill(s) and to provide a free open
 # source software to greater benefit the POA community.
 #
 # Script have been written with limited testing, please use with cautious
 #
 # License under GNU GENERAL PUBLIC LICENSE to provide freely distributable
-# Please read LICENSE for ship with the script for more details
+# Please read LICENSE.md for ship with the script for more details
 # ---------------------------------------------------------------------------
+
 
 """
 =========================================================================
@@ -17,6 +19,8 @@
 - v0.1: Experimental version
 - License under GNU GENERAL PUBLIC LICENSE to provide freely distributable
 - v0.2: Added Recursive option to pull out all children component, excluding connection component
+- v0.3: Fix issue with the recursive option where all the attribute was also added to the end of the PFL
+
 
 =========================================================================
 
@@ -136,9 +140,14 @@ class PoaComponent(object):
 
     # -----------------------------------------------------------------------
     def fetch_comp_header_from_id(self, id):
-        """ Fetching the component details using the component id """
+        """ Feching the component details using the component id """
         result = []
-        sql = "select * from component_header_view where component_id = :p1"
+        sql = """
+            select cht.component_alias as TEMPLATE_ALIAS, ch.*
+            from component_header_view ch
+            left join component_header cht on ch.component_clone_id = cht.component_id
+            where ch.component_id = :p1
+        """
         rows, headings = self._db.fetch_all(sql, p1=id)
 
         if not len(rows):
@@ -210,24 +219,16 @@ class PoaComponent(object):
 
 
 # ---------------------------------------------------------------------------
-def comp_export(poa_comp, id, is_recursive, file_exporter, attribute_filter):
-
-    comp_ids = []
+def comp_export(poa_comp, comp_id, file_exporter, attribute_filter):
 
     f = ExporterFactory(file_exporter)
-    if is_recursive:
-        comp_ids = poa_comp.fetch_component_and_child_components(id)
-    else:
-        comp_ids.append(id)
-
-    for comp_id in comp_ids:
-        comp = poa_comp.fetch_comp_header_from_id(comp_id)
-        f.export_component(comp)
-        attrs = poa_comp.fetch_attrs_from_comp_id(comp_id)
-        for attr in attrs:
-            if attribute_filter and not re.search(attribute_filter, attr['ATTRIBUTE_NAME']):
-                continue
-            f.export_attribute(attr)
+    comp = poa_comp.fetch_comp_header_from_id(comp_id)
+    f.export_component(comp)
+    attrs = poa_comp.fetch_attrs_from_comp_id(comp_id)
+    for attr in attrs:
+        if attribute_filter and not re.search(attribute_filter, attr['ATTRIBUTE_NAME']):
+            continue
+        f.export_attribute(attr)
     return f.get_result()
 
 # ---------------------------------------------------------------------------
@@ -295,12 +296,20 @@ def main():
         if args.recursive:
             is_recursive = True
 
-        # -------------------------------------------------------------------
-        # Define file format to output
-        file_exporter = file_exporter_factory(args.output_format)
+        comp_ids = []
+        result_txt = ''
+        if is_recursive:
+            comp_ids = poa_comp.fetch_component_and_child_components(comp_id)
+        else:
+            comp_ids.append(id)
 
-        print(comp_export(poa_comp, comp_id, is_recursive, file_exporter,
-                          args.attribute_filter))
+        for comp_id in comp_ids:
+            # -------------------------------------------------------------------
+            # Define file format to output
+            file_exporter = file_exporter_factory(args.output_format)
+            result_txt += comp_export(poa_comp, comp_id,
+                                      file_exporter, args.attribute_filter)
+        print(result_txt + file_exporter.get_footer())
 
     except NotImplementedError as exp:
         logger.fatal(exp)
