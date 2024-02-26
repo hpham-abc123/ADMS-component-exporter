@@ -301,7 +301,7 @@ def main():
         if is_recursive:
             comp_ids = poa_comp.fetch_component_and_child_components(comp_id)
         else:
-            comp_ids.append(id)
+            comp_ids.append(comp_id)
 
         for comp_id in comp_ids:
             # -------------------------------------------------------------------
