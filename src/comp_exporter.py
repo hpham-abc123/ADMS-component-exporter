@@ -8,8 +8,6 @@
 #
 # Script have been written with limited testing, please use with cautious
 #
-# License under GNU GENERAL PUBLIC LICENSE to provide freely distributable
-# Please read LICENSE.md for ship with the script for more details
 # ---------------------------------------------------------------------------
 
 
