@@ -15,7 +15,6 @@
 =========================================================================
 
 - v0.1: Experimental version
-- License under GNU GENERAL PUBLIC LICENSE to provide freely distributable
 - v0.2: Added Recursive option to pull out all children component, excluding connection component
 - v0.3: Fix issue with the recursive option where all the attribute was also added to the end of the PFL
 
