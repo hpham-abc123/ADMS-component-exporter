@@ -2,7 +2,7 @@
 # ----------------------------------------------------------------------------
 # Created By  : Hung Pham
 # Created Date: 29/05/2022
-# version ='0.3'
+# version ='0.4'
 # My weekend's work, to skill up my python skill(s) and to provide a free open
 # source software to greater benefit the POA community.
 #
@@ -17,6 +17,7 @@
 - v0.1: Experimental version
 - v0.2: Added Recursive option to pull out all children component, excluding connection component
 - v0.3: Fix issue with the recursive option where all the attribute was also added to the end of the PFL
+- v0.4: Added new line character for multi-line attribute definition
 
 
 =========================================================================
@@ -25,29 +26,29 @@ A basic script to pull out information from component_header_view and
 component_attributes to a specific format for viewing or importing
 into another environment
 
-Currently, the format supported are pfl and txt.
+Currently, the format supported are: pfl, txt, json, md
 
 With PFL, only core fields are export. Other non important field(s) are
 currently not included.
 
-Format supported are: pfl, txt, json, md
-
 For example, to run the script:
 Example to enable Python
-PYTHONPATH=/users/lib/python:/users/lib/python:/opt/poweron/release/v6.5.1.1.11_rt/lib/python/
     To generate a PFL
-    ./comp_exporter.py  -c 'ALIAS-123-T'
+    python comp_exporter  -c 'ALIAS-123-T'
 
     To generate a PFL filtered by a specified attribute name
-    ./comp_exporter.py -c 'ALIAS-123-T' -f '(Scan Value|Set State)'
-    ./comp_exporter.py -i 'x00abcdefCOMP' -f '(Scan Value|Set State)'
+    python comp_exporter -c 'ALIAS-123-T' -f '(Scan Value|Set State)'
+    python comp_exporter -i 'x00abcdefCOMP' -f '(Scan Value|Set State)'
 
     To generate a PFL and all it associated children, excluding connection component
-    ./comp_exporter.py -c 'ALIAS-123-T' -r
+    python comp_exporter -c 'ALIAS-123-T' -r
+    
+    To generate a PFL with newline character as ';'. This is for multiline attribute definition 
+    python comp_exporter -c 'ALIAS-123-T' -n ';'
 
 
     To generate a TXT output filtered by a specified attribute name
-    ./comp_exporter.py -c 'ALIAS-123-T' -f '(Scan Value|Set State)' -f txt
+    python comp_exporter -c 'ALIAS-123-T' -f '\bScan Value\n|Set State\n' -f txt
 
 =========================================================================
 """
@@ -231,7 +232,7 @@ def comp_export(poa_comp, comp_id, file_exporter, attribute_filter):
 # ---------------------------------------------------------------------------
 
 
-def file_exporter_factory(output_format):
+def file_exporter_factory(output_format, params):
     file_exporter = None
     if output_format:
         if output_format.lower() == 'txt':
@@ -242,8 +243,10 @@ def file_exporter_factory(output_format):
             file_exporter = MarkDownExporter()
         else:
             file_exporter = PflExporter()
+            file_exporter.set_new_line_char(params['pfl_new_line_char'])
     else:
         file_exporter = PflExporter()
+        file_exporter.set_new_line_char(params['pfl_new_line_char'])
     return file_exporter
 
 
@@ -269,6 +272,9 @@ def main():
                             help="Output format (pfl, txt, json, md). Default to pfl")
         parser.add_argument('-r', '--recursive', action='store_true',
                             required=False, help="Recursively down the child component")
+        parser.add_argument('-n', '--pfl_newline_char', type=str, required=False, default='',
+                            help="PFL newline char to put in PFL 1103 command")
+          
         args = parser.parse_args()
     except:
         parser.print_help()
@@ -282,6 +288,7 @@ def main():
             sys.exit(0)
 
         poa_comp = PoaComponent(RDBMS)
+        file_exporter_params = {}
 
         if args.comp_alias:
             comp_id = poa_comp.fetch_comp_id_from_alias(args.comp_alias)
@@ -292,7 +299,14 @@ def main():
         is_recursive = False
         if args.recursive:
             is_recursive = True
-
+            
+        if len(args.pfl_newline_char) > 1:
+            print("New line character must be a single character, not multi-characters")
+            parser.print_help()
+            sys.exit(0)
+        file_exporter_params['pfl_new_line_char'] = args.pfl_newline_char
+        
+            
         comp_ids = []
         result_txt = ''
         if is_recursive:
@@ -303,10 +317,10 @@ def main():
         for comp_id in comp_ids:
             # -------------------------------------------------------------------
             # Define file format to output
-            file_exporter = file_exporter_factory(args.output_format)
+            file_exporter = file_exporter_factory(args.output_format, file_exporter_params)
             result_txt += comp_export(poa_comp, comp_id,
                                       file_exporter, args.attribute_filter)
-        print(result_txt + file_exporter.get_footer())
+        print(file_exporter.get_header() + result_txt + file_exporter.get_footer())
 
     except NotImplementedError as exp:
         logger.fatal(exp)

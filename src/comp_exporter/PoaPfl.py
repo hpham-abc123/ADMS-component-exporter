@@ -14,7 +14,11 @@ import re
 class PoaPfl(object):
 
     def __init__(self):
-        pass
+        self._new_line_char = ' '
+        
+        
+    def set_new_line_char(self, new_line_char):
+        self._new_line_char = new_line_char
 
     # --------------------------------------------------------------------------------------
     @staticmethod
@@ -34,6 +38,13 @@ class PoaPfl(object):
     # --------------------------------------------------------------------------------------
         return PoaPfl.comment("Selecting Alias") + \
         "    1\n{}\n".format(alias)
+        
+    # --------------------------------------------------------------------------------------
+    @staticmethod
+    def set_pfl_new_line_char_command(new_line_char: str):
+    # --------------------------------------------------------------------------------------
+        return PoaPfl.comment(f"Setting new line character as '{new_line_char}") + \
+        "    1103\n{}\n".format(new_line_char)
 
     # --------------------------------------------------------------------------------------
     @staticmethod
@@ -129,13 +140,14 @@ class PoaPfl(object):
         return "    6\n{}\n".format(val)
 
     # --------------------------------------------------------------------------------------
-    @staticmethod
-    def attr_defn(defn):
+    def attr_defn(self, defn):
     # --------------------------------------------------------------------------------------
         if defn is None:
             defn = ''
+        if self._new_line_char in str(defn):
+          raise ValueError(f"\n\nnew line character '{self._new_line_char}' is already use in definition {defn}. Consider using other character") 
         return PoaPfl.comment("Set Attribute Definition") + \
-        "    1000\n{}\n".format(str(defn).replace('\n', ' '))
+        "    1000\n{}\n".format(str(defn).replace('\n', self._new_line_char))
 
     # --------------------------------------------------------------------------------------
     @staticmethod

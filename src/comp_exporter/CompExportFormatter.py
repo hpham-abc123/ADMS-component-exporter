@@ -14,6 +14,8 @@
 #                          Added definition to vector attribute
 # 06/09/2022 - Hung Pham - change to json format to properly output attributes
 # 24/02/2024 - Hung Pham - Added get_footer to IExporter and PflExporter
+# 17/05/2025 0 Hung Pham - Added get_header to IExporter and PflExporter
+
 from PoaPfl import PoaPfl
 import copy
 import datetime
@@ -46,8 +48,11 @@ class IExporter(object):
 
     def get_result(self):
         return self._result
-    
+
     def get_footer(self):
+        return ''
+        
+    def get_header(self):
         return ''
 
 
@@ -98,8 +103,14 @@ class PflExporter(IExporter):
     def __init__(self, pfl_obj=PoaPfl()):
         super(PflExporter, self).__init__()
         self._pfl = pfl_obj
+        self._pfl_new_line_char = ''
         self._attr_def = ''
-
+        
+    def set_new_line_char(self, new_line_char):
+        """"Set PFL new char for use in PFl command 1103"""
+        self._pfl_new_line_char = new_line_char
+        self._pfl.set_new_line_char(new_line_char)
+    
     def export_component(self, comp_details):
         """ Build Component header """
         alias = comp_details['COMPONENT_ALIAS']
@@ -136,10 +147,10 @@ class PflExporter(IExporter):
         select_attr = self._pfl.select_attr(name)
         update_attr_header= self._pfl.update_attr_header(attr)
         attr_val = self._pfl.update_attr_val(val)
-        #alarm_ref = self._pfl.link_alarm_ref(attr['ATTRIBUTE_ALARM_REF'])
+        alarm_ref = self._pfl.link_alarm_ref(attr['ATTRIBUTE_ALARM_REF']) if int(attr['ATTRIBUTE_ALARM_REF']) else ''
         attr_defn = self._pfl.attr_defn(attr['ATTRIBUTE_DEFINITION']) if location ==1 else ''
 
-        res = select_attr_type + select_attr + update_attr_header + attr_val# + alarm_ref
+        res = select_attr_type + select_attr + update_attr_header + attr_val + alarm_ref
         self._result += res
         if location == 1:
             self._attr_def += select_attr + attr_defn
@@ -206,10 +217,13 @@ class PflExporter(IExporter):
     def get_result(self):
         """ Return output export result in a string format """
         return self._result + self._attr_def
-    
+
     # --------------------------------------------------------------------------
     def get_footer(self):
         return self._pfl.eof()
+        
+    def get_header(self):
+      return self._pfl.set_pfl_new_line_char_command(self._pfl_new_line_char) if self._pfl_new_line_char else ''
 
 # ---------------------------------------------------------------------------
 class JSONExporter(IExporter):
@@ -380,6 +394,6 @@ class ExporterFactory(object):
     def save_to_file(self, fname):
         with open (fname, "w") as out:
             out.write(self._exporter.get_file_content())
-        print "{} generated ...".format(fname)
+        print("{} generated ...".format(fname))
 
 
