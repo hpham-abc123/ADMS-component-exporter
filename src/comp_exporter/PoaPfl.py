@@ -61,11 +61,12 @@ class PoaPfl(object):
         comp_class = detail.get('COMPONENT_CLASS')
         trace_class = detail.get('COMPONENT_SWITCH_STATUS')
         substation_class = detail.get('COMPONENT_SUBSTATION_CLASS')
-        type = detail.get('COMPONENT_TYPE')
+        comp_type = detail.get('COMPONENT_TYPE')
         zone = detail.get('COMPONENT_ZONE') if detail.get('COMPONENT_ZONE') else ''
+        sld_class = detail.get('COMPONENT_SLD_CLASS') if detail.get('COMPONENT_SLD_CLASS') else ''
 
-        return  PoaPfl.comment("Updating User Ref:{}, Class:{}, Trace Class:{}, Substation Class:{}, Type:{} and District Zone:{}".format(user_ref, comp_class, trace_class, substation_class, type, zone)) + \
-        "7\n3,{},  9,{},  18,{},  19,{},  29,{},  15,{},\n".format(user_ref, comp_class, trace_class, substation_class, type, zone)
+        return  PoaPfl.comment("Updating User Ref:{}, Class:{}, Trace Class:{}, Substation Class:{}, Type:{} and District Zone:{}, SLD_CLASS: {}".format(user_ref, comp_class, trace_class, substation_class, comp_type, zone, sld_class)) + \
+        "7\n3,{},  9,{},  18,{},  19,{},  29,{},  15,{}, 30,{}\n".format(user_ref, comp_class, trace_class, substation_class, comp_type, zone, sld_class)
 
     # --------------------------------------------------------------------------------------
     @staticmethod
